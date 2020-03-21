@@ -1,0 +1,418 @@
+---
+title: "SVD & PCA thresholding"
+author: "Conrad Thiele"
+date: '2020-03-21'
+slug: svd-pca
+categories: ["Linear Algebra", "SVD & PCA Fundamentals", "Thresholding & Examples"]
+tags: ["SVD", "PCA", "Threshold", "Linear Transformation", "Linear Algebra"]
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2020-03-21T21:49:28+10:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+bibliography: library.bib
+citation_package: biblatex
+csl: ieee-with-url.csl
+---
+
+<script src="/rmarkdown-libs/kePrint/kePrint.js"></script>
+
+
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>How to decide on a cut-off rank in noisy data</p>
+</div>
+<div id="a-brief-overview" class="section level3">
+<h3>A brief overview</h3>
+<p>Single Value Decomposition (SVD) is one of the most popular matrix decompositions taught to students, as it among the fundamental matrix equation used in the areas of engineering, financial sector, and computer science, and many more. It is the base mathematical formula for the well-known clustering technique: Principle Component Analysis (PCA).</p>
+</div>
+<div id="pca-and-svd---contrasting-equations." class="section level3">
+<h3>PCA and SVD - Contrasting equations.</h3>
+<p>Any student or professional learning tools for computer science, statistics or mathematics can appreciate that knowing how each function works is vitally important to produce a satisfactory result. The intention here is to highlight the difference general difference between two standard tools used in the analysis.</p>
+<p>In calculating the Principal Component Analysis, the analyst needs to scale and centre the matrix to a mean of zero and unity variance before applying the Singular Value Decomposition <span class="citation">[1]</span>. Thus, for Singular Value Decomposition, it is NOT necessary to centre, scale or square root the data; therefore, the data is in its original form.</p>
+<p>Since the Principle Component Analysis relies on the same equation, that being the Singular Value Decomposition, it is fair to assume that both methods aim to find the rank of independence, and thus the correlating effects between two or more independent variables.</p>
+</div>
+<div id="why-singular-value-decomposition" class="section level3">
+<h3>Why Singular Value Decomposition?</h3>
+<p>Sadek, 2012 <span class="citation">[2]</span> describes the purpose of Singular Value Decomposition when stating, “SVD is a stable and an effective method to split the system into a set of linearly independent components, each of them bearing own energy contribution”. Where the “energy” is, in fact, the descending correlating effect on each rank, which could be best described as independent variables. As such, the first rank correlates the strongest, and so forth, reducing in effect at a rate based solely on the composition of the initial matrix.</p>
+<p>The outcome of the SVD is ranked independent components by correlation, which intrinsically aligns with a clustering and dimension reduction problem, due to the simple fact that only a certain number of featured ranks needed to reproduce an approximation of the original matrix <span class="citation">[3]</span> <span class="citation">[2]</span> <span class="citation">[1]</span>.</p>
+</div>
+<div id="understanding-the-equation." class="section level3">
+<h3>Understanding the equation.</h3>
+<p>The Singular Value Decomposition made up of three unitary components, extracted from a matrix, which for this example, the matrix <span class="math inline">\(A\)</span> in the space of real numbers, <span class="math inline">\(A\in R^{m x n}\)</span>. The three unitary components <span class="math inline">\(U, \Sigma, V\)</span> matrices extracted from <span class="math inline">\(A\)</span> to form three distinctly shaped portions, where both <span class="math inline">\(U\)</span> and <span class="math inline">\(V\)</span> at the vector level are <span class="math inline">\(u_{k}\)</span> and <span class="math inline">\(v_{k}\)</span> respectively. The <span class="math inline">\(\Sigma\)</span>, in this case, is sigma and is denoted as <span class="math inline">\(\sigma_{k}\)</span> in its vector form. Together they form a low-ranked matrix <span class="math inline">\(\hat{X} = \hat{U}\hat{\Sigma}\hat{V}^{T}\)</span> :</p>
+<p><span class="math display">\[\hat{X}=\sum_{k=1}^{r} \sigma_{1}u_{1}v_{1}^{T} + \sigma_{2}u_{2}v_{2}^{T} + \sigma_{r}u_{r}v_{r}^{T}\]</span></p>
+<p>So the output of a full SVD produces a left singular value, <span class="math inline">\(U^{nxn}\)</span>, singular values, <span class="math inline">\(\Sigma^{mxn}\)</span>, and right singluar values, <span class="math inline">\(V^{mxn}\)</span>, where each <span class="math inline">\(r\)</span> is the rank or column vector of <span class="math inline">\(k\)</span>, which produce unitary matrix such that all components have a transpose and an inverse of itself. The breakdown of each component can be seen in <em>Figure 1.</em></p>
+<img src="images/Full-SVD.jpg" title="fig:" alt="Full SVD" />
+<center>
+<em>Figure 1</em> - Components of the full SVD.<br><br>
+</center>
+<p>The term unitary matrix denotes that each of the components has a transpose and an inverse of itself. The result is a low-ranked approximation of <span class="math inline">\(A\)</span>, which is known as <span class="math inline">\(\hat{X}\)</span>, with the reason being that the multiplication of <span class="math inline">\(U, S,\)</span> and <span class="math inline">\(V\)</span> produces a close resemblance to the original matrix, and therefore, is not <span class="math inline">\(A\)</span> <span class="citation">[1]</span>. The advantage of the separation of components to form a low-ranked matrix, <span class="math inline">\(\hat{X}\)</span> allows the user to specify the number of ranks, columns, of each component of <span class="math inline">\(U, V,\)</span> and <span class="math inline">\(\Sigma\)</span> to include in the reconstruction of <span class="math inline">\(A\)</span>. For instance, a person may extract one or many ranks to achieve the best outcome. Defining the number of ranks, threshold, is particularly important and the basis for this article.</p>
+<p>In general, there is no stipulation as to the type of matrix needed to perform Singular Value Decomposition. As such, there is no need to test for symmetry, rank testing or the presence of positive Eigenvalues and Eigenvectors before applying the equation <span class="citation">[4]</span>.</p>
+<p>However, this is not entirely true, as both SVD and PCA assume linearity within the dataset, as each segment is drawn sagaciously from the Eigenvalue and Eigenvector problem. Meaning each of the values above sits on a line-span, can undergo a linear transformation, is bound by the constraints of linear algebra and as a consequence is a linear regression calculation <span class="citation">[5]</span>. Whereby the sigma values, <span class="math inline">\(\Sigma\)</span> become the positive square root of each Eigenvalue <span class="math inline">\(\lambda_{i} = \sigma^{2}_{i}\)</span>, and the Eigenvectors metamorphosised into the column vectors of <span class="math inline">\(V\)</span> both of which are determined by the matrix transpose of itself <span class="math inline">\(A^{T}A\)</span>. Conversely, the matrix multiplication of the transpose <span class="math inline">\(AA^{T}\)</span> produces the <span class="math inline">\(U\)</span> component <span class="citation">[6]</span><span class="citation">[7]</span>. Therefore, it would be fair and reasonable to first determine the normality of the dataset before performing either the Principal Component Analysis or Singular Value Decomposition.</p>
+<p>If there is only one main point you take from this section is that both SVD and PCA provide a linear transformation where each of the matrices ordered in descending order. As such, each column of the matrix <span class="math inline">\(U\)</span> and <span class="math inline">\(\Sigma\)</span> transform from the matrix <span class="math inline">\(A\)</span> produces an order column vector, which ranks from left to right; strongest to weakest. Whereas, the right singular values of <span class="math inline">\(V^{T}\)</span> also produce from <span class="math inline">\(A\)</span> is also in descending order. Note though, <span class="math inline">\(V\)</span> in in transpose position and is in a read from top-down fashion from most correlated to weakest row vectors.</p>
+<p>For a more detailed visual explanation of linear algebra fundamentals, linear transformation and the intuition behind how the Eigenvectors and Eigenvalues remain on the line span, then see the videos by Sanderson, 2016 <span class="citation">[8]</span><span class="citation">[9]</span>;</p>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=fNk_zzaMoSs&amp;list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab">Vectors, what even are they? | Essence of linear algebra, chapter 1</a></li>
+<li><a href="https://www.youtube.com/watch?v=PFDu9oVAE-g">Eigenvectors and eigenvalues | Essence of linear algebra, chapter 14</a></li>
+</ul>
+</div>
+<div id="supervised-approach-to-svd." class="section level3">
+<h3>Supervised approach to SVD.</h3>
+<p>To appreciate the power of the Singular Value Decomposition and how vital the concept of rank is in influencing how the analysis utilises this transformation, it is best first to visualise the changes in a supervised manner. In the following example, the oython code and image is taken directly from Brunton and Kutz, 2019 and altered slightly to reflect the needs of the article, and can be downloaded from the authors websites <a href="databookuw.com">databookuw</a><span class="citation">[10]</span>.</p>
+<center>
+<em>Code Snippet 1 - Importing image and setting to grey scale.</em><br><br>
+</center>
+<img src="images/grey_dog.png" />
+<center>
+<em>Figure 2 - Greyscaled image.</em><br><br>
+</center>
+<p>At this stage, in <em>Code Snippet 1</em> not a lot has happened, the image of the dog has been read, converted to a grey scaled image instead of a colour photo and assigned to the variable A (See <em>Figure 2</em>). Behind the scenes, the matrix is <span class="math inline">\(A^{2000x1500}\)</span> filled with real values from 0-255, which is the result of the conversion to greyscale.</p>
+<p>The <em>Table 1</em> below represents a small portion of the matrix containing 2000 rows by 1500 columns! The Singular Value Decomposition object is to move these values into the highest rank columns <span class="math inline">\(U\)</span> and <span class="math inline">\(\Sigma\)</span> and rows, remember the <span class="math inline">\(V\)</span> component is in transpose so that the matrix still contains the essential information necessary for the picture to still be recogniseable for what it is, an image of the dog. Yet, the number of columns, and rows can be dramatically reduced the number of dimensions required to yield a similar outcome to the original image.</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+A1
+</th>
+<th style="text-align:right;">
+A2
+</th>
+<th style="text-align:right;">
+A3
+</th>
+<th style="text-align:right;">
+A4
+</th>
+<th style="text-align:right;">
+A5
+</th>
+<th style="text-align:right;">
+A6
+</th>
+<th style="text-align:right;">
+A7
+</th>
+<th style="text-align:right;">
+A8
+</th>
+<th style="text-align:right;">
+A9
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+178
+</td>
+<td style="text-align:right;">
+178
+</td>
+<td style="text-align:right;">
+178
+</td>
+<td style="text-align:right;">
+178
+</td>
+<td style="text-align:right;">
+178
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+174
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+170
+</td>
+<td style="text-align:right;">
+171
+</td>
+<td style="text-align:right;">
+172
+</td>
+<td style="text-align:right;">
+171
+</td>
+<td style="text-align:right;">
+170
+</td>
+<td style="text-align:right;">
+172
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+169
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+178
+</td>
+<td style="text-align:right;">
+181
+</td>
+<td style="text-align:right;">
+174
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+178
+</td>
+<td style="text-align:right;">
+176
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+172
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+173
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+174
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+176
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+176
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+177
+</td>
+<td style="text-align:right;">
+177
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+174
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+175
+</td>
+</tr>
+</tbody>
+</table>
+<center>
+<em>Table 1 - 9 x 9 pixels from greyscaled dog.</em><br><br>
+</center>
+<p>The following code snippet holds the SVD function used to split the original image. Here the total rank of <span class="math inline">\(U\)</span> is multiplied by the specific number of columns from <span class="math inline">\(\Sigma\)</span> and rows of <span class="math inline">\(R\)</span> to produce <span class="math inline">\(\hat{X}=U\hat{\Sigma}\hat{R^{T}}\)</span> where the  represents the absolute difference of <span class="math inline">\(|\hat{R^{T}}-R^{T}|\)</span> and <span class="math inline">\(|\hat{\Sigma}-\Sigma|\)</span> and is know as the least squared formula.</p>
+<p>Reconstituting the image is as simple as taking the dot product of the component U, S, RT in that order, <em>Code Snippet 2</em>, in what is know as Truncated Singular Value Decomposition (TSVD). The idea is to stop when the image is similar to the original image. In this case, specific ranks can isolate the best-reconstructed image and is the concept behind this being a supervised SVD.</p>
+<center>
+<em>Code Snippet 2 - Truncate Singular Value Decomposition.</em><br><br>
+</center>
+<table>
+<thead>
+<tr class="header">
+<th align="center"><img src="images/X%20rank%205.png" /></th>
+<th align="center"><img src="images/X%20rank%2020.png" /></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">X rank 5 - Size 89 KB</td>
+<td align="center">X rank 20 - Size 116 KB</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr class="header">
+<th align="center"><img src="images/X%20rank%20100.png" /></th>
+<th align="center"><img src="images/grey_dog.png" /></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">X rank 100 - Size 175 KB</td>
+<td align="center">Original image - Size 214 KB</td>
+</tr>
+</tbody>
+</table>
+<center>
+<em>Figure 3 - Original versus ranked recontructed images.</em><br><br>
+</center>
+<p>The four images in <em>Figure 3</em> show the difference between the original image <span class="math inline">\(A\)</span> and that of <span class="math inline">\(\hat{X}\)</span> at rank 100 that is the product of <span class="math inline">\(U\)</span> and the first 100 columns of <span class="math inline">\(\hat{S}\)</span> and <span class="math inline">\(\hat{R^{T}}\)</span>, and at 20% reduction in memory allocation. The size reduction may not initially seem that much. However, when dealing with a massive matrix in the millions, it can easily be seen that any saving in memory can be crucial in saving time. More importantly, though, the key components have been drawn out through this transformation to yield the same effect by ordering the singular values in a way that is easy to manage even for the most novice analyst.</p>
+</div>
+<div id="references" class="section level3 unnumbered">
+<h3>References</h3>
+<div id="refs" class="references">
+<div id="ref-brunton_data-driven_2019">
+<p>[1] S. L. Brunton and J. N. Kutz, <em>Data-driven science and engineering machine learning, dynamical systems, and control</em>. Cambridge University Press, 2019. </p>
+</div>
+<div id="ref-sadek_svd_2012">
+<p>[2] R. A. Sadek, “SVD based image processing applications: State of the art, contributions and research challenges,” <em>(IJACSA) International Journal of Advanced Computer Science and Applications</em>, vol. 3, no. 7, pp. 26–34, 2012 [Online]. Available: <a href="www.ijacsa.thesai.org">www.ijacsa.thesai.org</a></p>
+</div>
+<div id="ref-ranade_variation_2007">
+<p>[3] A. Ranade, S. S. Mahabalarao, and S. Kale, “A variation on SVD based image compression,” <em>Image and Vision Computing</em>, vol. 25, pp. 771–777, 2007 [Online]. Available: <a href="www.sciencedirect.com">www.sciencedirect.com</a></p>
+</div>
+<div id="ref-singh_linear_2013">
+<p>[4] K. Singh, <em>Linear algebra: Step by step</em>, 1 edition. Oxford, United Kingdom: Oxford University Press, 2013. </p>
+</div>
+<div id="ref-gundersen_singular_2018">
+<p>[5] G. Gundersen, “Singular value decomposition as simply as possible,” 2018. [Online]. Available: <a href="https://gregorygundersen.com/blog/2018/12/10/svd/">https://gregorygundersen.com/blog/2018/12/10/svd/</a>. [Accessed: 10-Feb-2020]</p>
+</div>
+<div id="ref-noauthor_singular_2011">
+<p>[6] “Singular value decomposition,” <em>MIT OpenCourseWare</em>, 2011 [Online]. Available: <a href="https://ocw.mit.edu/courses/mathematics/18-06sc-linear-algebra-fall-2011/positive-definite-matrices-and-applications/singular-value-decomposition/MIT18_06SCF11_Ses3.5sum.pdf">https://ocw.mit.edu/courses/mathematics/18-06sc-linear-algebra-fall-2011/positive-definite-matrices-and-applications/singular-value-decomposition/MIT18_06SCF11_Ses3.5sum.pdf</a></p>
+</div>
+<div id="ref-gundersen_proof_2018">
+<p>[7] G. Gundersen, “Proof of the singular value decomposition,” 2018. [Online]. Available: <a href="https://gregorygundersen.com/blog/2018/12/20/svd-proof/">https://gregorygundersen.com/blog/2018/12/20/svd-proof/</a>. [Accessed: 29-Jan-2020]</p>
+</div>
+<div id="ref-sanderson_eigenvectors_2016">
+<p>[8] G. Sanderson, <em>Eigenvectors and eigenvalues essence of linear algebra, chapter 14</em>. 2016 [Online]. Available: <a href="https://www.youtube.com/watch?v=PFDu9oVAE-g">https://www.youtube.com/watch?v=PFDu9oVAE-g</a>. [Accessed: 29-Jan-2020]</p>
+</div>
+<div id="ref-sanderson_vectors_2016">
+<p>[9] G. Sanderson, “Vectors, what even are they? essence of linear algebra, chapter 1 - YouTube,” 2016. [Online]. Available: <a href="https://www.youtube.com/watch?v=fNk_zzaMoSs&amp;list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab">https://www.youtube.com/watch?v=fNk_zzaMoSs&amp;list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab</a>. [Accessed: 10-Feb-2020]</p>
+</div>
+<div id="ref-brunton_steven_l_about_nodate">
+<p>[10] J. N. Brunton Steven L., “About the book. DATA DRIVEN SCIENCE &amp; ENGINEERING.” [Online]. Available: <a href="databookuw.com/index.html">databookuw.com/index.html</a>. [Accessed: 11-Feb-2020]</p>
+</div>
+</div>
+</div>
