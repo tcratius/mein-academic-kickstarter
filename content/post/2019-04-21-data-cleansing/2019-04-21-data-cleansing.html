@@ -61,22 +61,20 @@ caloundra.waves &lt;- read.csv(file = &quot;./data/caloundra-pob_2018-01-01t00_0
 <p>In <em>Table 1.1</em> the rows with the value -99.9 do not appear to match up with any of the <strong>fields</strong> and there <strong>descriptions</strong> associated with the sample.</p>
 <p>There are two important reasons to remove these values, firstly, they are some kind of sensory data issue (a form of sampling error) and secondly, this will skew the average value for each column, as seen in <em>Table 1.2</em>,and will result in an inaccurate analysis.</p>
 <pre class="r"><code>summary(mooloolaba.waves)</code></pre>
-<pre><code>##            Date.Time           Hs                Hmax               Tp         
-##  1/01/2018 0:00 :    1   Min.   :-99.9000   Min.   :-99.900   Min.   :-99.900  
-##  1/01/2018 0:30 :    1   1st Qu.:  0.8037   1st Qu.:  1.350   1st Qu.:  7.526  
-##  1/01/2018 1:00 :    1   Median :  1.1120   Median :  1.870   Median :  9.132  
-##  1/01/2018 1:30 :    1   Mean   :  1.0747   Mean   :  1.929   Mean   :  9.072  
-##  1/01/2018 10:00:    1   3rd Qu.:  1.6080   3rd Qu.:  2.700   3rd Qu.: 10.901  
-##  1/01/2018 10:30:    1   Max.   :  4.2570   Max.   :  7.262   Max.   : 21.121  
-##  (Other)        :14586                                                         
+<pre><code>##   Date.Time               Hs                Hmax               Tp         
+##  Length:14592       Min.   :-99.9000   Min.   :-99.900   Min.   :-99.900  
+##  Class :character   1st Qu.:  0.8037   1st Qu.:  1.350   1st Qu.:  7.526  
+##  Mode  :character   Median :  1.1120   Median :  1.870   Median :  9.132  
+##                     Mean   :  1.0747   Mean   :  1.929   Mean   :  9.072  
+##                     3rd Qu.:  1.6080   3rd Qu.:  2.700   3rd Qu.: 10.901  
+##                     Max.   :  4.2570   Max.   :  7.262   Max.   : 21.121  
 ##        Tz          Peak.Direction       SST        
 ##  Min.   :-99.900   Min.   :-99.9   Min.   :-99.90  
 ##  1st Qu.:  5.033   1st Qu.: 91.0   1st Qu.: 21.00  
 ##  Median :  5.567   Median :105.0   Median : 22.95  
 ##  Mean   :  5.513   Mean   :102.5   Mean   : 23.09  
 ##  3rd Qu.:  6.256   3rd Qu.:119.0   3rd Qu.: 25.95  
-##  Max.   : 10.146   Max.   :358.0   Max.   : 28.65  
-## </code></pre>
+##  Max.   : 10.146   Max.   :358.0   Max.   : 28.65</code></pre>
 <p><em>Table 1.2 Adapted Five number summary with mean values</em></p>
 <p>Another way to determine outliers is via boxplot as it does a true five number summary. As each of columns range of values (min - max) are completely different, it is best to do a boxplot for each variable (column). For this tutorial, the columns Wave Height(Hs) and Peak Direction were chosen. (see<em>Figure 1.1</em>)</p>
 <pre class="r"><code>par(mfrow=c(2,2))
@@ -111,22 +109,20 @@ boxplot(mooloolaba.waves$Peak.Direction,
 <pre class="r"><code>mooloo.RM.outlier &lt;- mooloolaba.waves[!(apply(mooloolaba.waves[,2:6], 1,
                                      function(y) any(abs(y + 99.9) &lt; 1e-9))),]</code></pre>
 <pre class="r"><code>summary(mooloo.RM.outlier)</code></pre>
-<pre><code>##            Date.Time           Hs             Hmax             Tp        
-##  1/01/2018 1:00 :    1   Min.   :0.294   Min.   :0.510   Min.   : 2.835  
-##  1/01/2018 1:30 :    1   1st Qu.:0.805   1st Qu.:1.350   1st Qu.: 7.529  
-##  1/01/2018 10:00:    1   Median :1.112   Median :1.870   Median : 9.147  
-##  1/01/2018 10:30:    1   Mean   :1.248   Mean   :2.103   Mean   : 9.260  
-##  1/01/2018 11:00:    1   3rd Qu.:1.609   3rd Qu.:2.700   3rd Qu.:10.903  
-##  1/01/2018 11:30:    1   Max.   :4.257   Max.   :7.262   Max.   :21.121  
-##  (Other)        :14541                                                   
+<pre><code>##   Date.Time               Hs             Hmax             Tp        
+##  Length:14547       Min.   :0.294   Min.   :0.510   Min.   : 2.835  
+##  Class :character   1st Qu.:0.805   1st Qu.:1.350   1st Qu.: 7.529  
+##  Mode  :character   Median :1.112   Median :1.870   Median : 9.147  
+##                     Mean   :1.248   Mean   :2.103   Mean   : 9.260  
+##                     3rd Qu.:1.609   3rd Qu.:2.700   3rd Qu.:10.903  
+##                     Max.   :4.257   Max.   :7.262   Max.   :21.121  
 ##        Tz         Peak.Direction      SST       
 ##  Min.   : 3.378   Min.   :  5    Min.   :19.80  
 ##  1st Qu.: 5.036   1st Qu.: 91    1st Qu.:21.00  
 ##  Median : 5.568   Median :105    Median :23.00  
 ##  Mean   : 5.693   Mean   :103    Mean   :23.43  
 ##  3rd Qu.: 6.257   3rd Qu.:119    3rd Qu.:26.00  
-##  Max.   :10.146   Max.   :358    Max.   :28.65  
-## </code></pre>
+##  Max.   :10.146   Max.   :358    Max.   :28.65</code></pre>
 <p><em>Table 1.3 Adapted Five number summary with mean values outliers removed.</em></p>
 <p>As a result of this one crucial step in removing the sensory error produces a positive mean shift from <em>Table 1.2 - Table 1.3</em>. The data appears to have normalised, i.e. the mean and median values are almost identical, so it would be reasonal to say that it is close to a normal distribution and has gone from being non parametric to parametric.</p>
 <p>##Box Plot - Sensor Error removed.</p>
